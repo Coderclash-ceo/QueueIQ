@@ -1,10 +1,10 @@
-// customer.js — TokenIQ Customer-Facing Web Application
-// Implements 7 patient screens matching DocSpot layout with Figma tokens.
+// customer.js — QueueIQ Customer-Facing Web Application
+// Implements 7 patient screens matching QueueIQ layout with Figma tokens.
 
 let services = [];
 let selectedService = null;
-let currentTokenId = localStorage.getItem("tokeniq_active_token_id") || null;
-let currentAppointment = JSON.parse(localStorage.getItem("tokeniq_last_appointment") || "null");
+let currentTokenId = localStorage.getItem("queueiq_active_token_id") || null;
+let currentAppointment = JSON.parse(localStorage.getItem("queueiq_last_appointment") || "null");
 let statusPollTimer = null;
 let agingTickerTimer = null;
 let tokenQueueEnteredAt = null;
@@ -108,7 +108,7 @@ function renderHome() {
   if (currentTokenId) {
     upcomingBanner.style.display = "block";
     document.getElementById("bannerTokenId").textContent = `#${currentTokenId.slice(0, 8)}`;
-    const savedService = localStorage.getItem("tokeniq_active_service_name");
+    const savedService = localStorage.getItem("queueiq_active_service_name");
     if (savedService) document.getElementById("bannerStatus").textContent = savedService;
 
     // Quick fetch live stats for home banner
@@ -214,7 +214,7 @@ function renderServiceDetail() {
 function proceedToWalkin() {
   if (!selectedService) return;
   document.getElementById("walkinServiceName").textContent = selectedService.name;
-  document.getElementById("walkinPatientName").value = localStorage.getItem("tokeniq_patient_name") || "";
+  document.getElementById("walkinPatientName").value = localStorage.getItem("queueiq_patient_name") || "";
   selectWalkinCategory("general");
   showScreen("screen-walkin");
 }
@@ -222,7 +222,7 @@ function proceedToWalkin() {
 function proceedToBooking() {
   if (!selectedService) return;
   document.getElementById("bookingServiceName").textContent = selectedService.name;
-  document.getElementById("bookingPatientName").value = localStorage.getItem("tokeniq_patient_name") || "";
+  document.getElementById("bookingPatientName").value = localStorage.getItem("queueiq_patient_name") || "";
   selectBookingCategory("general");
   initBookingCalendar();
   showScreen("screen-booking");
@@ -245,7 +245,7 @@ function selectWalkinCategory(cat) {
 
 async function submitWalkin() {
   const patientName = document.getElementById("walkinPatientName").value.trim() || "Walk-in Patient";
-  localStorage.setItem("tokeniq_patient_name", patientName);
+  localStorage.setItem("queueiq_patient_name", patientName);
 
   if (!selectedService) {
     showToast("Please select a clinic service.", "error");
@@ -277,8 +277,8 @@ async function submitWalkin() {
 
     // Save token
     currentTokenId = data.id;
-    localStorage.setItem("tokeniq_active_token_id", data.id);
-    localStorage.setItem("tokeniq_active_service_name", selectedService.name);
+    localStorage.setItem("queueiq_active_token_id", data.id);
+    localStorage.setItem("queueiq_active_service_name", selectedService.name);
 
     showToast("Successfully joined the queue!");
     submitBtn.disabled = false;
@@ -356,7 +356,7 @@ function selectTimeSlot(slotStr) {
 
 async function submitBooking() {
   const patientName = document.getElementById("bookingPatientName").value.trim() || "Patient";
-  localStorage.setItem("tokeniq_patient_name", patientName);
+  localStorage.setItem("queueiq_patient_name", patientName);
 
   if (!selectedService) {
     showToast("Select a clinic service.", "error");
@@ -400,7 +400,7 @@ async function submitBooking() {
       appointmentTime,
       category: activeBookingCategory
     };
-    localStorage.setItem("tokeniq_last_appointment", JSON.stringify(currentAppointment));
+    localStorage.setItem("queueiq_last_appointment", JSON.stringify(currentAppointment));
 
     // Render confirmed screen
     document.getElementById("confirmedApptId").textContent = data.id;
@@ -456,7 +456,7 @@ async function submitCheckin() {
 
     // Checked in! Active token is created
     currentTokenId = data.id;
-    localStorage.setItem("tokeniq_active_token_id", data.id);
+    localStorage.setItem("queueiq_active_token_id", data.id);
 
     showToast("Check-in successful! Joined live queue.");
     checkinBtn.disabled = false;
@@ -481,7 +481,7 @@ function renderNoActiveToken() {
 
 function startLiveTracking(tokenId) {
   currentTokenId = tokenId;
-  localStorage.setItem("tokeniq_active_token_id", tokenId);
+  localStorage.setItem("queueiq_active_token_id", tokenId);
   document.getElementById("liveTrackingActive").style.display = "block";
   document.getElementById("liveTrackingEmpty").style.display = "none";
   document.getElementById("liveTokenIdDisplay").textContent = tokenId;
@@ -616,7 +616,7 @@ function leaveOrClearQueue() {
   if (confirm("Are you sure you want to stop tracking this token?")) {
     clearInterval(statusPollTimer);
     clearInterval(agingTickerTimer);
-    localStorage.removeItem("tokeniq_active_token_id");
+    localStorage.removeItem("queueiq_active_token_id");
     currentTokenId = null;
     showScreen("screen-home");
   }

@@ -60,7 +60,7 @@ saqms-v2/
         demo.js               -> 1-click seed demo data and reset queue
     package.json
   frontend/
-    customer.html            -> 7-screen DocSpot mobile patient portal
+    customer.html            -> 7-screen QueueIQ mobile patient portal
     customer.js              -> Patient navigation, booking calendar, live aging tracking
     staff.html                 -> Staff command dashboard (KPIs, Queue table, Counters, VIP)
     staff.js                 -> Live dashboard real-time data sync, counter controls

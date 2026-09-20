@@ -1,4 +1,4 @@
-// staff.js — TokenIQ Staff Command Dashboard
+// staff.js — QueueIQ Staff Command Dashboard
 // Comprehensive clinic queue, counter, appointment & VIP management logic.
 
 let allServices = [];
