@@ -485,6 +485,11 @@
               </div>
             </div>
 
+            <button class="btn-primary" id="btnViewPrescription" style="margin-bottom: 12px; background: #059669; display: none;" onclick="openPatientRxModal()">
+              <span>📄 View &amp; Download Digital Prescription (Rx)</span>
+              <span>→</span>
+            </button>
+
             <button class="btn-secondary" style="font-size: 13px;" onclick="leaveOrClearQueue()">
               Stop Tracking / Exit Queue
             </button>
@@ -494,6 +499,27 @@
     </div>
 
   </main>
+
+  <!-- Patient Digital Prescription Slip Modal -->
+  <div class="rx-modal-overlay" id="patientRxModal">
+    <div class="rx-modal-card printable-area" style="max-width: 620px;">
+      <div class="no-print" style="padding: 16px 20px; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; background: #F8FAFC;">
+        <div style="font-weight: 700; font-size: 15px; color: #0F172A;">Digital Outpatient Prescription (Rx)</div>
+        <button class="btn-remove-med" type="button" onclick="closePatientRxModal()">✕</button>
+      </div>
+
+      <div style="padding: 28px; background: #FFFFFF;" id="patientRxContent">
+        <!-- Rendered dynamically via customer.js -->
+      </div>
+
+      <div class="no-print" style="padding: 16px 24px; background: #F8FAFC; border-top: 1px solid #E2E8F0; display: flex; gap: 10px; justify-content: flex-end;">
+        <button class="btn-secondary" type="button" onclick="closePatientRxModal()" style="width: auto;">Close</button>
+        <button class="btn-primary" type="button" onclick="window.print()" style="width: auto; background: #059669;">
+          <span>🖨️ Print / Save Prescription (PDF)</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Toast Notice Banner -->
   <div class="toast-notice" id="customerToast">Notification message</div>

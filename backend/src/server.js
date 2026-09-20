@@ -9,6 +9,7 @@ const countersRouter = require("./routes/counters");
 const tokensRouter = require("./routes/tokens");
 const appointmentsRouter = require("./routes/appointments");
 const demoRouter = require("./routes/demo");
+const authRouter = require("./routes/auth");
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use("/counters", countersRouter);
 app.use("/tokens", tokensRouter);
 app.use("/appointments", appointmentsRouter);
 app.use("/demo", demoRouter);
+app.use("/auth", authRouter);
 
 // Auto-seed default services and counters with deterministic IDs so frontend and backend are always 100% in sync
 async function ensureDefaultData() {

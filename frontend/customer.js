@@ -517,12 +517,15 @@ async function pollLiveStatus() {
     const statusPill = document.getElementById("liveStatusPill");
     const calledModal = document.getElementById("calledNoticeModal");
 
+    const rxBtn = document.getElementById("btnViewPrescription");
+
     if (data.status === "waiting") {
       posElem.textContent = `#${data.position}`;
       etaElem.textContent = `${data.etaMins || 0} min`;
       statusPill.textContent = "Waiting in Queue";
       statusPill.className = "live-badge-status waiting";
       calledModal.style.display = "none";
+      if (rxBtn) rxBtn.style.display = "none";
     } else if (data.status === "called") {
       posElem.textContent = "NOW";
       etaElem.textContent = "0 min";
@@ -530,12 +533,14 @@ async function pollLiveStatus() {
       statusPill.className = "live-badge-status called";
       calledModal.style.display = "block";
       document.getElementById("calledCounterName").textContent = data.counterId ? `Counter ${data.counterId.slice(0, 4)}` : "Assigned Counter";
+      if (rxBtn) rxBtn.style.display = "none";
     } else if (data.status === "completed") {
       posElem.textContent = "✓";
       etaElem.textContent = "Done";
       statusPill.textContent = "Consultation Completed";
       statusPill.className = "live-badge-status completed";
       calledModal.style.display = "none";
+      if (rxBtn) rxBtn.style.display = "block";
       clearInterval(statusPollTimer);
       clearInterval(agingTickerTimer);
     } else if (data.status === "no-show") {
@@ -544,6 +549,7 @@ async function pollLiveStatus() {
       statusPill.textContent = "Marked as No-Show";
       statusPill.className = "live-badge-status no-show";
       calledModal.style.display = "none";
+      if (rxBtn) rxBtn.style.display = "none";
       clearInterval(statusPollTimer);
       clearInterval(agingTickerTimer);
     }
@@ -620,6 +626,120 @@ function leaveOrClearQueue() {
     currentTokenId = null;
     showScreen("screen-home");
   }
+}
+
+// -------------------------------------------------------------
+// PATIENT DIGITAL PRESCRIPTION (Rx) VIEWER & PRINT
+// -------------------------------------------------------------
+async function openPatientRxModal() {
+  if (!currentTokenId) return;
+
+  const modal = document.getElementById("patientRxModal");
+  const content = document.getElementById("patientRxContent");
+  if (!modal || !content) return;
+
+  content.innerHTML = `<div style="text-align:center; padding: 32px; color:#64748B;">Loading your verified electronic prescription...</div>`;
+  modal.style.display = "flex";
+
+  try {
+    const res = await fetch(`${API_BASE}/tokens/${currentTokenId}/prescription`);
+    const data = await res.json();
+
+    if (data.error) {
+      content.innerHTML = `
+        <div style="text-align:center; padding: 32px;">
+          <div style="font-size: 36px; margin-bottom: 8px;">📋</div>
+          <h3 style="font-size: 16px; color: var(--text-dark); margin-bottom: 6px;">Prescription Not Available</h3>
+          <p style="font-size: 13px; color: var(--text-muted);">The attending doctor did not issue a digital prescription for this visit.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const medRows = (data.medicines && data.medicines.length > 0)
+      ? data.medicines.map((m, i) => `
+          <tr>
+            <td><strong>${i + 1}. ${m.name}</strong></td>
+            <td>${m.dosage || "1 tab"}</td>
+            <td>${m.frequency || "1-0-1"}</td>
+            <td>${m.duration || "3 Days"}</td>
+          </tr>
+        `).join("")
+      : `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">No medications prescribed.</td></tr>`;
+
+    content.innerHTML = `
+      <div class="rx-slip-header">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+            <div class="brand-badge" style="width:28px; height:28px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 2h2a2 2 0 0 1 2 2v4h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-4v4a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-4H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h4V4a2 2 0 0 1 2-2z" fill="currentColor" fill-opacity="0.25"/><path d="M3 12h4.5l2-4 3.5 8 2.5-5 1.5 2H21" stroke-width="2.3"/></svg>
+            </div>
+            <strong style="font-size: 16px; color:#0f172a;">QueueIQ Central Healthcare Clinic</strong>
+          </div>
+          <div style="font-size: 12px; color:#64748b;">Department of Outpatient Care &amp; Clinical Medicine</div>
+          <div style="font-size: 12px; color:#059669; font-weight: 600; margin-top:2px;">Consultant: ${data.doctorName || "Dr. A. Sharma (OPD)"}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="rx-symbol">℞</div>
+          <div style="font-size: 11px; color:#64748b; margin-top:4px;">${new Date(data.completedAt || Date.now()).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+        </div>
+      </div>
+
+      <div style="background:#f8fafc; border-radius:10px; padding:12px 16px; margin-bottom:16px; display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:12px;">
+        <div><strong>Patient Name:</strong> <span style="color:#0f172a;">${data.patientName || "Patient"}</span></div>
+        <div><strong>Token Ref:</strong> <code style="font-weight:700; color:#059669;">#${(data.tokenId || currentTokenId).slice(0, 8)}</code></div>
+        <div style="grid-column: 1/-1;"><strong>Primary Diagnosis:</strong> <span style="color:#0f172a; font-weight:600;">${data.diagnosis || "Clinical Consultation"}</span></div>
+      </div>
+
+      ${data.clinicalNotes ? `
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">Clinical Observations &amp; Notes:</div>
+          <div style="font-size:13px; color:#1e293b; background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:10px;">${data.clinicalNotes}</div>
+        </div>
+      ` : ""}
+
+      <div style="margin-bottom:16px;">
+        <div style="font-size:12px; font-weight:700; color:#475569; margin-bottom:6px;">Prescribed Medications (Rx):</div>
+        <table class="rx-table">
+          <thead>
+            <tr>
+              <th>Medicine</th>
+              <th>Dosage</th>
+              <th>Frequency</th>
+              <th>Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${medRows}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-bottom:20px; font-size:12px; color:#475569; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:10px;">
+        <strong style="color:#065f46;">Doctor's Advice:</strong> ${data.advice || "Take medicines as scheduled and maintain adequate hydration."}
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px dashed #cbd5e1; padding-top:16px; margin-top:20px;">
+        <div style="font-size:10px; color:#94a3b8;">
+          Digitally generated by QueueIQ Healthcare System.<br>Verified Electronic Medical Prescription Slip.
+        </div>
+        <div style="text-align:center;">
+          <div style="font-family:'Courier New', monospace; font-size:13px; font-weight:700; color:#0f172a; border-bottom:1px solid #0f172a; padding-bottom:2px; min-width:120px;">
+            ${data.doctorName || "Dr. A. Sharma"}
+          </div>
+          <div style="font-size:10px; color:#64748b; margin-top:2px;">Attending Physician</div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    console.error("Prescription load error", err);
+    content.innerHTML = `<div style="text-align:center; padding:24px; color:#ef4444;">Failed to load prescription slip.</div>`;
+  }
+}
+
+function closePatientRxModal() {
+  const modal = document.getElementById("patientRxModal");
+  if (modal) modal.style.display = "none";
 }
 
 // -------------------------------------------------------------

@@ -1675,3 +1675,318 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ======================================================== */
+/* STAFF AUTHENTICATION & LOCK SCREEN                       */
+/* ======================================================== */
+.auth-lock-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 19, 43, 0.88);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 20px;
+}
+
+.auth-lock-card {
+  background: #FFFFFF;
+  width: 100%;
+  max-width: 420px;
+  border-radius: 20px;
+  padding: 36px 28px;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.auth-lock-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: rgba(31, 163, 92, 0.12);
+  color: var(--primary-green);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin-bottom: 16px;
+}
+
+.auth-lock-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin-bottom: 6px;
+}
+
+.auth-lock-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+.pin-display-wrapper {
+  margin-bottom: 20px;
+}
+
+.pin-input-field {
+  width: 100%;
+  padding: 14px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 8px;
+  text-align: center;
+  border-radius: 12px;
+  border: 2px solid var(--border-color);
+  background: #F8FAFC;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.pin-input-field:focus {
+  border-color: var(--primary-green);
+  background: #FFFFFF;
+  box-shadow: 0 0 0 4px rgba(31, 163, 92, 0.15);
+}
+
+.pin-quick-roles {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn-quick-role {
+  flex: 1;
+  padding: 10px;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-quick-role:hover {
+  background: #E2E8F0;
+}
+
+.auth-user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(31, 163, 92, 0.1);
+  border: 1px solid rgba(31, 163, 92, 0.2);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary-green);
+}
+
+.btn-logout {
+  background: none;
+  border: none;
+  color: #EF4444;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.btn-logout:hover {
+  background: #FEE2E2;
+}
+
+/* ======================================================== */
+/* DOCTOR CONSULTATION & PRESCRIPTION (Rx) MODAL            */
+/* ======================================================== */
+.rx-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(6px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.rx-modal-card {
+  background: #FFFFFF;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rx-modal-header {
+  padding: 20px 24px;
+  background: #F8FAFC;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rx-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.rx-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rx-med-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 36px;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.rx-med-row input, .rx-med-row select {
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.btn-remove-med {
+  background: #FEE2E2;
+  color: #DC2626;
+  border: none;
+  border-radius: 8px;
+  height: 36px;
+  width: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.btn-add-med {
+  padding: 6px 14px;
+  background: #F1F5F9;
+  border: 1px dashed #94A3B8;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dark);
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.btn-add-med:hover {
+  background: #E2E8F0;
+}
+
+/* ======================================================== */
+/* DIGITAL PRESCRIPTION SLIP (PATIENT VIEW & PRINT)         */
+/* ======================================================== */
+.rx-slip-container {
+  background: #FFFFFF;
+  border: 2px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 600px;
+  margin: 16px auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+.rx-slip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 2px solid var(--primary-green);
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.rx-symbol {
+  font-size: 32px;
+  font-family: serif;
+  font-weight: 900;
+  color: var(--primary-green);
+  line-height: 1;
+}
+
+.rx-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+
+.rx-table th {
+  background: #F1F5F9;
+  text-align: left;
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  border-bottom: 2px solid #CBD5E1;
+}
+
+.rx-table td {
+  padding: 10px;
+  font-size: 13px;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+/* ======================================================== */
+/* RECEPTION QR STANDEE KIOSK                               */
+/* ======================================================== */
+.standee-poster {
+  background: #FFFFFF;
+  border: 2px solid #0F172A;
+  border-radius: 24px;
+  padding: 40px 32px;
+  text-align: center;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-area, .printable-area * {
+    visibility: visible;
+  }
+  .printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+

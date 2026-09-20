@@ -105,11 +105,38 @@ router.get("/:tokenId/status", async (req, res) => {
 router.patch("/:tokenId/complete", async (req, res) => {
   try {
     const { tokenId } = req.params;
+    const { prescription } = req.body || {};
     const tokenDoc = await db.collection("tokens").doc(tokenId).get();
     if (!tokenDoc.exists) return res.status(404).json({ error: "Token not found" });
     const token = tokenDoc.data();
+    const now = Date.now();
 
-    await db.collection("tokens").doc(tokenId).update({ status: "completed" });
+    const updatePayload = {
+      status: "completed",
+      completedAt: now
+    };
+
+    if (prescription) {
+      updatePayload.prescription = {
+        diagnosis: prescription.diagnosis || "Routine OPD Checkup",
+        clinicalNotes: prescription.clinicalNotes || "",
+        medicines: Array.isArray(prescription.medicines) ? prescription.medicines : [],
+        advice: prescription.advice || "Take medications as directed. Hydrate adequately.",
+        doctorName: prescription.doctorName || "Consulting Physician",
+        completedAt: now
+      };
+
+      // Also persist to dedicated prescriptions collection for audit & quick retrieval
+      await db.collection("prescriptions").doc(tokenId).set({
+        tokenId,
+        patientName: token.userId,
+        serviceId: token.serviceId,
+        ...updatePayload.prescription
+      });
+    }
+
+    await db.collection("tokens").doc(tokenId).update(updatePayload);
+
     if (token.counterId) {
       await db.collection("counters").doc(token.counterId).update({ currentTokenId: null });
     }
@@ -119,7 +146,32 @@ router.patch("/:tokenId/complete", async (req, res) => {
       await cDoc.ref.update({ currentTokenId: null });
     }
 
-    res.json({ message: "Token marked completed" });
+    res.json({ message: "Token marked completed", prescription: updatePayload.prescription || null });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET Prescription details for a token
+router.get("/:tokenId/prescription", async (req, res) => {
+  try {
+    const { tokenId } = req.params;
+    const rxDoc = await db.collection("prescriptions").doc(tokenId).get();
+    if (rxDoc.exists) {
+      return res.json({ id: rxDoc.id, ...rxDoc.data() });
+    }
+
+    const tokenDoc = await db.collection("tokens").doc(tokenId).get();
+    if (tokenDoc.exists && tokenDoc.data().prescription) {
+      return res.json({
+        id: tokenId,
+        patientName: tokenDoc.data().userId,
+        serviceId: tokenDoc.data().serviceId,
+        ...tokenDoc.data().prescription
+      });
+    }
+
+    return res.status(404).json({ error: "Prescription not found for this consultation" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

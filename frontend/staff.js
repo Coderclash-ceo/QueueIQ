@@ -8,6 +8,81 @@ let allAppointments = [];
 let currentView = "view-overview";
 let autoRefreshTimer = null;
 
+// Staff Authentication State
+let currentStaffUser = JSON.parse(sessionStorage.getItem("queueiq_staff_session") || "null");
+
+function checkStaffAuth() {
+  const overlay = document.getElementById("staffAuthOverlay");
+  const userPill = document.getElementById("authUserPill");
+  const userName = document.getElementById("authUserName");
+
+  if (!currentStaffUser) {
+    if (overlay) overlay.style.display = "flex";
+    if (userPill) userPill.style.display = "none";
+    const pinInput = document.getElementById("staffPinInput");
+    if (pinInput) setTimeout(() => pinInput.focus(), 100);
+  } else {
+    if (overlay) overlay.style.display = "none";
+    if (userPill && userName) {
+      userPill.style.display = "inline-flex";
+      userName.textContent = `${currentStaffUser.badge || "🩺"} ${currentStaffUser.name}`;
+    }
+  }
+}
+
+async function submitStaffPin() {
+  const pinInput = document.getElementById("staffPinInput");
+  const pin = pinInput ? pinInput.value.trim() : "";
+  if (!pin) {
+    showStaffToast("Please enter a 4-digit PIN", "error");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin })
+    });
+    const data = await res.json();
+    if (data.error) {
+      showStaffToast(data.error, "error");
+      if (pinInput) {
+        pinInput.value = "";
+        pinInput.focus();
+      }
+      return;
+    }
+
+    currentStaffUser = data.user;
+    sessionStorage.setItem("queueiq_staff_session", JSON.stringify(data.user));
+    if (data.token) sessionStorage.setItem("queueiq_auth_token", data.token);
+
+    showStaffToast(`Welcome, ${data.user.name}!`);
+    checkStaffAuth();
+    await fetchStaffData();
+  } catch (err) {
+    console.error("Auth error", err);
+    showStaffToast("Server connection error during login", "error");
+  }
+}
+
+function autofillPin(pin) {
+  const input = document.getElementById("staffPinInput");
+  if (input) {
+    input.value = pin;
+    submitStaffPin();
+  }
+}
+
+function logoutStaff() {
+  currentStaffUser = null;
+  sessionStorage.removeItem("queueiq_staff_session");
+  sessionStorage.removeItem("queueiq_auth_token");
+  showStaffToast("Dashboard locked");
+  checkStaffAuth();
+}
+
 // View Navigation
 function showStaffView(viewId) {
   currentView = viewId;
@@ -257,7 +332,8 @@ function renderQueueTable() {
         <td>
           <div style="display: flex; gap: 6px;">
             ${(isWaiting || isCalled) ? `
-              <button class="btn-action-sm done" title="Mark Consultation Completed" onclick="completeToken('${t.id}')">✓ Complete</button>
+              <button class="btn-action-sm done" title="Consultation & Prescription" onclick="openRxModal(null, '${t.id}')" style="background:#059669;">🩺 Rx</button>
+              <button class="btn-action-sm done" title="Mark Consultation Completed" onclick="completeToken('${t.id}')">✓ Done</button>
               <button class="btn-action-sm danger" title="Mark No-Show" onclick="noShowToken('${t.id}')">✕ No-Show</button>
             ` : `<span style="font-size: 12px; color: var(--text-gray);">Finished</span>`}
           </div>
@@ -317,10 +393,13 @@ function renderCountersGrid() {
 
         <div style="margin-top: 16px;">
           <div class="counter-btn-row">
-            <button class="btn-action-sm call" style="flex: 2; padding: 10px;" onclick="callNextToken('${c.id}')">
+            <button class="btn-action-sm call" style="flex: 1.8; padding: 10px;" onclick="callNextToken('${c.id}')">
               📢 Call Next Patient
             </button>
             ${isServing ? `
+              <button class="btn-action-sm done" style="flex: 1.6; padding: 10px; background: #059669;" onclick="openRxModal('${c.id}', '${currentToken.id}')" title="Write consultation notes & prescription">
+                🩺 Rx &amp; Notes
+              </button>
               <button class="btn-action-sm done" style="flex: 1; padding: 10px;" onclick="completeToken('${currentToken.id}')">
                 ✓ Done
               </button>
@@ -450,6 +529,117 @@ async function completeToken(tokenId) {
   } catch (err) {
     console.error("Error completing token", err);
     showStaffToast("Failed to mark completed.", "error");
+  }
+}
+
+// -------------------------------------------------------------
+// DOCTOR CONSULTATION & PRESCRIPTION (Rx) HANDLERS
+// -------------------------------------------------------------
+function openRxModal(counterId, tokenId) {
+  const token = allTokens.find((t) => t.id === tokenId);
+  if (!token) {
+    showStaffToast("Token not found", "error");
+    return;
+  }
+
+  const tokenInput = document.getElementById("rxTokenId");
+  if (tokenInput) tokenInput.value = tokenId;
+
+  const patientInfo = document.getElementById("rxModalPatientInfo");
+  if (patientInfo) {
+    const service = allServices.find((s) => s.id === token.serviceId) || { name: "Clinic Service" };
+    patientInfo.textContent = `Patient: ${token.userId} · Token #${token.id.slice(0, 8)} · ${service.name} (${token.category || "General"})`;
+  }
+
+  const diagInput = document.getElementById("rxDiagnosis");
+  const notesInput = document.getElementById("rxClinicalNotes");
+  const adviceInput = document.getElementById("rxAdvice");
+  if (diagInput) diagInput.value = "";
+  if (notesInput) notesInput.value = "";
+  if (adviceInput) adviceInput.value = "Take prescribed medications on time. Drink plenty of water and rest.";
+
+  // Populate with 1 standard medicine row
+  const medList = document.getElementById("rxMedicinesList");
+  if (medList) {
+    medList.innerHTML = "";
+    addMedicineRow({ name: "Paracetamol 500mg", dosage: "1 tab", frequency: "1-0-1 (After meals)", duration: "3 Days" });
+  }
+
+  const modal = document.getElementById("rxConsultationModal");
+  if (modal) modal.style.display = "flex";
+}
+
+function closeRxModal() {
+  const modal = document.getElementById("rxConsultationModal");
+  if (modal) modal.style.display = "none";
+}
+
+function addMedicineRow(med = {}) {
+  const container = document.getElementById("rxMedicinesList");
+  if (!container) return;
+
+  const row = document.createElement("div");
+  row.className = "rx-med-row";
+  row.innerHTML = `
+    <input type="text" placeholder="Medicine / Syrup name" value="${med.name || ""}" class="med-name" required />
+    <input type="text" placeholder="Dosage (e.g. 500mg)" value="${med.dosage || "1 tab"}" class="med-dosage" />
+    <input type="text" placeholder="Frequency (1-0-1)" value="${med.frequency || "1-0-1"}" class="med-freq" />
+    <input type="text" placeholder="Duration (5 days)" value="${med.duration || "5 Days"}" class="med-duration" />
+    <button type="button" class="btn-remove-med" onclick="this.parentElement.remove()" title="Remove medicine">✕</button>
+  `;
+  container.appendChild(row);
+}
+
+async function submitRxConsultation() {
+  const tokenId = document.getElementById("rxTokenId")?.value;
+  if (!tokenId) return;
+
+  const diagnosis = document.getElementById("rxDiagnosis")?.value.trim() || "OPD Clinical Consultation";
+  const clinicalNotes = document.getElementById("rxClinicalNotes")?.value.trim() || "";
+  const advice = document.getElementById("rxAdvice")?.value.trim() || "Follow doctor instructions.";
+
+  const medicines = [];
+  document.querySelectorAll("#rxMedicinesList .rx-med-row").forEach((row) => {
+    const name = row.querySelector(".med-name")?.value.trim();
+    if (name) {
+      medicines.push({
+        name,
+        dosage: row.querySelector(".med-dosage")?.value.trim() || "1 tab",
+        frequency: row.querySelector(".med-freq")?.value.trim() || "1-0-1",
+        duration: row.querySelector(".med-duration")?.value.trim() || "3 Days"
+      });
+    }
+  });
+
+  const doctorName = currentStaffUser ? currentStaffUser.name : "Dr. A. Sharma (OPD)";
+
+  try {
+    const res = await fetch(`${API_BASE}/tokens/${tokenId}/complete`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prescription: {
+          diagnosis,
+          clinicalNotes,
+          medicines,
+          advice,
+          doctorName
+        }
+      })
+    });
+
+    const data = await res.json();
+    if (data.error) {
+      showStaffToast(data.error, "error");
+      return;
+    }
+
+    closeRxModal();
+    showStaffToast("Prescription recorded & consultation completed! ✓");
+    await fetchStaffData();
+  } catch (err) {
+    console.error("Error submitting Rx", err);
+    showStaffToast("Failed to save prescription", "error");
   }
 }
 
@@ -656,6 +846,7 @@ function updateClock() {
 // INITIALIZATION
 // -------------------------------------------------------------
 window.addEventListener("DOMContentLoaded", async () => {
+  checkStaffAuth();
   updateClock();
   setInterval(updateClock, 1000);
 
