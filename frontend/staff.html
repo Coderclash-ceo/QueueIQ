@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staff Command Dashboard — TokenIQ</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Top Unified Header -->
+  <header class="app-navbar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <div class="brand-badge">Q</div>
+        <div>
+          <div class="brand-title">TokenIQ</div>
+          <div class="brand-subtitle">Staff Operations Center</div>
+        </div>
+      </div>
+
+      <div class="clinic-status-indicator">
+        <span class="online-dot"></span>
+        <span style="font-size: 13px; font-weight: 600; color: var(--text-dark);">DocSpot OPD Live</span>
+      </div>
+
+      <div class="nav-actions">
+        <button class="btn-action-sm call" onclick="seedDemoData()" title="Populate realistic demo patients and appointments for testing">
+          ✨ Seed Demo
+        </button>
+        <button class="btn-action-sm danger" onclick="clearQueueData()" title="Reset all waiting tokens and appointments">
+          Reset Queue
+        </button>
+        <span class="clock-display" id="staffLiveClock" style="font-family: monospace; font-size: 13px; font-weight: 700; color: var(--text-gray);">12:00:00</span>
+        <a href="customer.html" class="portal-switch-pill" style="margin-left: 8px;">
+          <span>← Patient Portal</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Responsive Staff Layout -->
+  <div class="staff-dashboard-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="staff-sidebar">
+      <nav class="sidebar-nav-menu">
+        <div class="sidebar-item active" data-view="view-overview" onclick="showStaffView('view-overview')">
+          <div class="sidebar-item-left">
+            <span style="font-size: 16px;">📊</span>
+            <span>Operations Overview</span>
+          </div>
+        </div>
+
+        <div class="sidebar-item" data-view="view-queue" onclick="showStaffView('view-queue')">
+          <div class="sidebar-item-left">
+            <span style="font-size: 16px;">👥</span>
+            <span>Live Priority Queue</span>
+          </div>
+          <span class="sidebar-badge" id="sidebarQueueCount">0</span>
+        </div>
+
+        <div class="sidebar-item" data-view="view-counters" onclick="showStaffView('view-counters')">
+          <div class="sidebar-item-left">
+            <span style="font-size: 16px;">🏢</span>
+            <span>Consultation Desks</span>
+          </div>
+          <span class="sidebar-badge" id="sidebarCounterCount">0</span>
+        </div>
+
+        <div class="sidebar-item" data-view="view-appointments" onclick="showStaffView('view-appointments')">
+          <div class="sidebar-item-left">
+            <span style="font-size: 16px;">📅</span>
+            <span>Scheduled Appointments</span>
+          </div>
+        </div>
+
+        <div class="sidebar-item" data-view="view-services" onclick="showStaffView('view-services')">
+          <div class="sidebar-item-left">
+            <span style="font-size: 16px;">🩺</span>
+            <span>Clinic Specialties</span>
+          </div>
+        </div>
+
+        <div class="sidebar-item" data-view="view-vip" onclick="showStaffView('view-vip')">
+          <div class="sidebar-item-left">
+            <span style="font-size: 16px;">⭐</span>
+            <span>VIP / Referred Booking</span>
+          </div>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a class="customer-link-btn" href="customer.html">
+          <span>📱</span>
+          <span>Open Patient Portal ↗</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Canvas -->
+    <main class="staff-main">
+      <div class="staff-content-canvas">
+
+        <!-- ========================================== -->
+        <!-- VIEW 1: OVERVIEW DASHBOARD                 -->
+        <!-- ========================================== -->
+        <div class="dashboard-view active" id="view-overview">
+          <div style="margin-bottom: 24px;">
+            <h1 class="heading-xl">Clinic Operations Overview</h1>
+            <p class="caption">Real-time throughput, priority queue balancing, and active counter monitoring.</p>
+          </div>
+
+          <!-- KPI Cards Grid -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <span class="kpi-title">Patients Waiting</span>
+              <div class="kpi-value" id="kpiWaitingCount" style="color: var(--primary-green);">0</div>
+              <div class="kpi-footer">Active in unified queue</div>
+            </div>
+
+            <div class="kpi-card">
+              <span class="kpi-title">Active Desks / Counters</span>
+              <div class="kpi-value" id="kpiActiveCounters">0 / 0</div>
+              <div class="kpi-footer">Serving / Total configured</div>
+            </div>
+
+            <div class="kpi-card">
+              <span class="kpi-title">Scheduled Today</span>
+              <div class="kpi-value" id="kpiAppointmentsCount" style="color: #4338CA;">0</div>
+              <div class="kpi-footer">Reserved time slots</div>
+            </div>
+
+            <div class="kpi-card">
+              <span class="kpi-title">Avg. Queue Wait</span>
+              <div class="kpi-value" id="kpiAvgWait">0 min</div>
+              <div class="kpi-footer">Balanced across tiers</div>
+            </div>
+          </div>
+
+          <!-- Queue Snapshot Table -->
+          <div class="table-card">
+            <div class="table-header-bar">
+              <div class="table-header-title">Top Waiting Patients (Priority Order)</div>
+              <button class="btn-action-sm call" onclick="showStaffView('view-queue')">
+                View Full Queue (All) →
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="staff-table">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Token ID</th>
+                    <th>Patient Name</th>
+                    <th>Specialty</th>
+                    <th>Priority Tier</th>
+                  </tr>
+                </thead>
+                <tbody id="overviewQueuePreview">
+                  <!-- Dynamically rendered by staff.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Counters Quick Snapshot -->
+          <div style="margin-top: 32px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+              <h2 class="heading-m">Counter Desks</h2>
+              <button class="btn-action-sm done" onclick="showStaffView('view-counters')">Manage Desks →</button>
+            </div>
+            <div class="counters-grid" id="overviewCountersPreview">
+              <!-- Dynamically rendered by staff.js -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: LIVE PRIORITY QUEUE                -->
+        <!-- ========================================== -->
+        <div class="dashboard-view" id="view-queue">
+          <div style="margin-bottom: 24px;">
+            <h1 class="heading-xl">Unified Priority Queue</h1>
+            <p class="caption">
+              Merges walk-ins and pre-booked appointments using tiered aging. Long-waiting general patients organically rise in effective tier (+1 Tier per 5 mins), guaranteeing freedom from starvation.
+            </p>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header-bar">
+              <div class="table-header-title">Queue Table</div>
+              <div class="table-actions">
+                <select id="queueServiceFilter" class="form-input" style="width: auto; margin-bottom: 0; padding: 8px 12px; font-size: 13px;" onchange="renderQueueTable()">
+                  <option value="">All Specialties</option>
+                </select>
+                <select id="queueStatusFilter" class="form-input" style="width: auto; margin-bottom: 0; padding: 8px 12px; font-size: 13px;" onchange="renderQueueTable()">
+                  <option value="">All Statuses</option>
+                  <option value="waiting" selected>Waiting Only</option>
+                  <option value="called">Called Only</option>
+                  <option value="completed">Completed</option>
+                  <option value="no-show">No-Show</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="staff-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Token</th>
+                    <th>Patient &amp; Category</th>
+                    <th>Specialty</th>
+                    <th>Time Waited</th>
+                    <th>Effective Priority Tier</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="queueTableBody">
+                  <!-- Dynamically rendered by staff.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3: COUNTERS MANAGEMENT                -->
+        <!-- ========================================== -->
+        <div class="dashboard-view" id="view-counters">
+          <div style="margin-bottom: 24px;">
+            <h1 class="heading-xl">Consultation Desks &amp; Counters</h1>
+            <p class="caption">Configure desks and call the highest-priority patient in the queue for each specialty.</p>
+          </div>
+
+          <!-- Add Counter Card -->
+          <div class="table-card" style="padding: 24px; margin-bottom: 28px;">
+            <h3 class="heading-m" style="margin-bottom: 14px;">Add New Counter Desk</h3>
+            <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+              <input type="text" id="newCounterName" class="form-input" placeholder="e.g. Counter 3 (General OPD)" style="max-width: 280px; margin-bottom: 0;" />
+              <select id="newCounterServiceSelect" class="form-input" style="max-width: 280px; margin-bottom: 0;"></select>
+              <button class="btn-action-sm call" style="padding: 14px 22px;" onclick="addCounter()">+ Add Counter</button>
+            </div>
+          </div>
+
+          <h2 class="heading-m" style="margin-bottom: 16px;">Active Desks</h2>
+          <div class="counters-grid" id="staffCountersGrid">
+            <!-- Dynamically rendered by staff.js -->
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 4: APPOINTMENTS MANAGEMENT            -->
+        <!-- ========================================== -->
+        <div class="dashboard-view" id="view-appointments">
+          <div style="margin-bottom: 24px;">
+            <h1 class="heading-xl">Scheduled Appointments</h1>
+            <p class="caption">
+              Booked slots do not occupy an active queue place until the patient arrives and checks in (starting their aging clock).
+            </p>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header-bar">
+              <div class="table-header-title">All Reservations</div>
+              <button class="btn-action-sm call" onclick="showStaffView('view-vip')">+ Book VIP / Referred Slot</button>
+            </div>
+            <div class="table-responsive">
+              <table class="staff-table">
+                <thead>
+                  <tr>
+                    <th>Appt ID</th>
+                    <th>Patient</th>
+                    <th>Specialty</th>
+                    <th>Slot Time</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="appointmentsTableBody">
+                  <!-- Dynamically rendered by staff.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 5: SERVICES MANAGEMENT                -->
+        <!-- ========================================== -->
+        <div class="dashboard-view" id="view-services">
+          <div style="margin-bottom: 24px;">
+            <h1 class="heading-xl">Clinic Specialties &amp; Departments</h1>
+            <p class="caption">Manage clinic specialties and configure expected consultation durations.</p>
+          </div>
+
+          <!-- Add Service Card -->
+          <div class="table-card" style="padding: 24px; margin-bottom: 28px;">
+            <h3 class="heading-m" style="margin-bottom: 14px;">Add New Specialty</h3>
+            <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+              <input type="text" id="newServiceName" class="form-input" placeholder="e.g. Cardiology, Orthopedics" style="max-width: 280px; margin-bottom: 0;" />
+              <input type="number" id="newServiceAvgTime" class="form-input" placeholder="Avg consultation (mins)" style="max-width: 200px; margin-bottom: 0;" />
+              <button class="btn-action-sm call" style="padding: 14px 22px;" onclick="addService()">+ Add Specialty</button>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header-bar">
+              <div class="table-header-title">Configured Specialties</div>
+            </div>
+            <div class="table-responsive">
+              <table class="staff-table">
+                <thead>
+                  <tr>
+                    <th>Specialty Name</th>
+                    <th>Avg Consultation</th>
+                    <th>Current Queue</th>
+                    <th>Counters Assigned</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="servicesTableBody">
+                  <!-- Dynamically rendered by staff.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 6: VIP / DOCTOR-REFERRED BOOKING      -->
+        <!-- ========================================== -->
+        <div class="dashboard-view" id="view-vip">
+          <div style="margin-bottom: 24px;">
+            <h1 class="heading-xl">Staff VIP / Emergency Referral</h1>
+            <p class="caption">Book high-priority consultation tokens reserved exclusively for authorized clinic staff.</p>
+          </div>
+
+          <!-- VIP Enforcement Policy Banner -->
+          <div class="vip-enforcement-banner">
+            <div class="vip-icon-pill">⭐</div>
+            <div>
+              <strong style="font-size: 15px; color: #3730A3;">Strict Staff Privilege: Tier 3 Maximum Priority</strong>
+              <p style="font-size: 13px; color: #4338CA; margin-top: 4px; line-height: 1.4;">
+                Patients cannot self-select VIP on the public booking form. When staff books a VIP appointment and checks them in, the patient is assigned <strong>Base Tier 3</strong>, placing them at the immediate head of the line ahead of all lower tiers.
+              </p>
+            </div>
+          </div>
+
+          <!-- VIP Form Card -->
+          <div class="table-card" style="padding: 32px; max-width: 680px;">
+            <label class="form-label" for="vipPatientName">Patient Full Name</label>
+            <input type="text" id="vipPatientName" class="form-input" placeholder="e.g. Dr. A. Sen / Referral Patient" />
+
+            <label class="form-label" for="vipServiceSelect">Specialty / Department</label>
+            <select id="vipServiceSelect" class="form-input"></select>
+
+            <label class="form-label" for="vipDateTime">Appointment Scheduled Date &amp; Time</label>
+            <input type="datetime-local" id="vipDateTime" class="form-input" />
+
+            <label class="form-label">Priority Tier</label>
+            <div style="margin-bottom: 18px;">
+              <span class="vip-badge-locked">
+                <span>⭐</span>
+                <span>Tier 3 · VIP / Doctor-Referred (Locked)</span>
+              </span>
+            </div>
+
+            <label class="form-label" for="vipNotes">Referral Note / Clinical Justification</label>
+            <input type="text" id="vipNotes" class="form-input" placeholder="e.g. Post-op check, ER triage, Dr. Vikram referral" />
+
+            <button class="btn-primary" id="vipSubmitBtn" onclick="bookVipAppointment()" style="margin-top: 10px;">
+              <span>Authorize &amp; Book VIP Slot</span>
+              <span>⭐</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Notice Banner -->
+  <div class="toast-notice" id="staffToast">Notification message</div>
+
+  <script src="config.js"></script>
+  <script src="staff.js"></script>
+</body>
+</html>

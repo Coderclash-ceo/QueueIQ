@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TokenIQ — Patient Clinic Portal</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Top Responsive Navigation Bar -->
+  <header class="app-navbar">
+    <div class="nav-container">
+      <a href="javascript:void(0)" class="nav-brand" onclick="showScreen('screen-home')">
+        <div class="brand-badge">Q</div>
+        <div>
+          <div class="brand-title">TokenIQ</div>
+          <div class="brand-subtitle">Patient Care Portal</div>
+        </div>
+      </a>
+
+      <nav class="nav-links">
+        <button class="nav-link-btn active" data-screen="screen-home" onclick="showScreen('screen-home')">
+          <span>🏠</span>
+          <span>Home</span>
+        </button>
+        <button class="nav-link-btn" data-screen="screen-browse" onclick="showScreen('screen-browse')">
+          <span>🩺</span>
+          <span>Specialties</span>
+        </button>
+        <button class="nav-link-btn" data-screen="screen-live-status" onclick="showScreen('screen-live-status')">
+          <span>⏱️</span>
+          <span>Live Queue</span>
+        </button>
+        <button class="nav-link-btn" data-screen="screen-checkin" onclick="showScreen('screen-checkin')">
+          <span>🏷️</span>
+          <span>Check In</span>
+        </button>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="staff.html" class="portal-switch-pill">
+          <span>Staff Dashboard</span>
+          <span>→</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Responsive Main Page Container -->
+  <main class="portal-main">
+
+    <!-- ========================================== -->
+    <!-- SCREEN 1: HOME VIEW                        -->
+    <!-- ========================================== -->
+    <div class="screen-view active" id="screen-home">
+      <!-- Welcome Hero Banner -->
+      <div class="home-hero-banner">
+        <div class="hero-left">
+          <h1>Welcome to DocSpot Central Clinic</h1>
+          <p>Experience seamless outpatient care with unified priority queueing, live waiting estimations, and fair anti-starvation scheduling.</p>
+        </div>
+        <div class="hero-right">
+          <button class="btn-primary" style="width: auto; padding: 12px 24px;" onclick="showScreen('screen-browse')">
+            <span>Find a Doctor / Specialty</span>
+            <span>→</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Active Queue / Appointment Banner (Dynamic) -->
+      <div class="active-tracker-banner" id="upcomingTrackerBanner">
+        <div class="banner-top-row">
+          <div class="live-pill">
+            <span class="pulse-dot"></span>
+            <span>Active Queue Token</span>
+          </div>
+          <span id="bannerTokenId" style="font-family: monospace; font-size: 13px; font-weight: 700; opacity: 0.95;">#TOKEN</span>
+        </div>
+        <div class="banner-service-name" id="bannerStatus">General Consultation</div>
+        <div class="banner-meta">Real-time queue tracking enabled · Automatic aging engine active</div>
+        <div class="banner-stats-row">
+          <div class="stat-item">
+            <div class="stat-num" id="bannerPos">#1</div>
+            <div class="stat-lbl">Your Queue Position</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num" id="bannerEta">~5 min</div>
+            <div class="stat-lbl">Estimated Wait</div>
+          </div>
+        </div>
+        <button class="banner-action-btn" onclick="showScreen('screen-live-status')">
+          <span>View Live Tracker &amp; Starvation Aging Clock</span>
+          <span>→</span>
+        </button>
+      </div>
+
+      <!-- Quick Action Cards (Join Walk-in / Check-in) -->
+      <div class="quick-action-cards">
+        <div class="quick-card primary" onclick="showScreen('screen-browse')">
+          <div class="quick-card-icon" style="background: var(--primary-green); color: #fff;">⚡</div>
+          <div>
+            <div class="quick-card-title">Join Walk-in Queue</div>
+            <div class="quick-card-sub">Physically at clinic? Pick a specialty to get your instant queue position</div>
+          </div>
+        </div>
+
+        <div class="quick-card" onclick="showScreen('screen-checkin')">
+          <div class="quick-card-icon" style="background: #EEF2FF; color: #4338CA;">🏷️</div>
+          <div>
+            <div class="quick-card-title">Check-in Scheduled Slot</div>
+            <div class="quick-card-sub">Already reserved an appointment? Check in with your ID to enter the live queue</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search Box Shortcut -->
+      <div class="search-box" onclick="showScreen('screen-browse')">
+        <span style="font-size: 18px; color: var(--text-gray);">🔍</span>
+        <input type="text" placeholder="Search clinic department, doctor specialty, or consultation service..." readonly />
+      </div>
+
+      <!-- Clinic Departments Grid -->
+      <div class="section-header-row">
+        <h2 class="heading-l">Clinic Specialties &amp; Outpatient Departments</h2>
+        <span class="section-link" onclick="showScreen('screen-browse')">Browse all departments →</span>
+      </div>
+
+      <div class="department-grid" id="homeDepartmentGrid">
+        <!-- Dynamically rendered by customer.js -->
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 2: BROWSE SPECIALTIES               -->
+    <!-- ========================================== -->
+    <div class="screen-view" id="screen-browse">
+      <div class="app-topbar">
+        <div class="circle-back-btn" onclick="showScreen('screen-home')" title="Back to Home">‹</div>
+        <h1 class="heading-l">Browse Clinic Specialties</h1>
+        <div style="width: 40px;"></div>
+      </div>
+
+      <div class="search-box">
+        <span style="font-size: 18px; color: var(--text-gray);">🔍</span>
+        <input type="text" id="browseSearchInput" placeholder="Filter specialties (e.g. OPD, Pediatrics, Dermatology, Cardiology)..." oninput="filterBrowseServices()" />
+      </div>
+
+      <div class="department-grid" id="browseServicesList">
+        <!-- Dynamically rendered by customer.js -->
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 3: SPECIALTY DETAIL                 -->
+    <!-- ========================================== -->
+    <div class="screen-view" id="screen-service-detail">
+      <div class="form-view-container">
+        <div class="app-topbar">
+          <div class="circle-back-btn" onclick="showScreen('screen-browse')" title="Back">‹</div>
+          <h2 class="heading-m">Department Details</h2>
+          <div style="width: 40px;"></div>
+        </div>
+
+        <div class="service-hero-card">
+          <div class="hero-avatar" id="detailServiceIcon">🩺</div>
+          <h1 class="heading-xl" id="detailServiceName" style="margin-bottom: 8px;">General OPD</h1>
+          <p class="caption" id="detailServiceDesc" style="max-width: 420px; margin: 0 auto 20px;">Primary health consultations, routine checkups &amp; prescriptions.</p>
+
+          <div class="detail-stats-row">
+            <div class="detail-stat">
+              <span class="detail-stat-val" id="detailAvgTime">10m</span>
+              <span class="detail-stat-lbl">Avg Consultation</span>
+            </div>
+            <div class="detail-stat">
+              <span class="detail-stat-val" style="color: var(--primary-green);">● Active</span>
+              <span class="detail-stat-lbl">Clinic Status</span>
+            </div>
+            <div class="detail-stat">
+              <span class="detail-stat-val">4.9 ★</span>
+              <span class="detail-stat-lbl">Care Rating</span>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="heading-m" style="margin-bottom: 14px;">Select How You Want to Enter</h3>
+
+        <div class="choice-action-card" onclick="proceedToWalkin()">
+          <div class="choice-info">
+            <div class="choice-icon" style="background: var(--primary-green-light); color: var(--primary-green);">⚡</div>
+            <div>
+              <div style="font-size: 16px; font-weight: 700; color: var(--text-dark);">Join Walk-in Queue Now</div>
+              <div style="font-size: 13px; color: var(--text-gray);">For patients currently at the clinic · Immediate priority token</div>
+            </div>
+          </div>
+          <div class="choice-arrow">→</div>
+        </div>
+
+        <div class="choice-action-card" onclick="proceedToBooking()">
+          <div class="choice-info">
+            <div class="choice-icon" style="background: #EEF2FF; color: #4338CA;">📅</div>
+            <div>
+              <div style="font-size: 16px; font-weight: 700; color: var(--text-dark);">Book Ahead for Later</div>
+              <div style="font-size: 13px; color: var(--text-gray);">Reserve a scheduled time slot · Arrive &amp; check in at your appointment time</div>
+            </div>
+          </div>
+          <div class="choice-arrow">→</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 4: WALKIN QUEUE FLOW                -->
+    <!-- ========================================== -->
+    <div class="screen-view" id="screen-walkin">
+      <div class="form-view-container">
+        <div class="app-topbar">
+          <div class="circle-back-btn" onclick="showScreen('screen-service-detail')" title="Back">‹</div>
+          <h2 class="heading-m">Walk-in Registration</h2>
+          <div style="width: 40px;"></div>
+        </div>
+
+        <div class="form-card">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <span class="form-label" style="margin-bottom: 0;">Specialty</span>
+            <span class="live-pill" id="walkinServiceName" style="background: var(--primary-green-light); color: var(--primary-green);">General OPD</span>
+          </div>
+
+          <label class="form-label" for="walkinPatientName">Patient Full Name</label>
+          <input type="text" class="form-input" id="walkinPatientName" placeholder="Enter patient name (e.g. Kashyap Patel)" />
+
+          <label class="form-label">Priority Category</label>
+          <div class="category-chips-row" id="walkinCategoryChips">
+            <div class="category-chip selected" data-cat="general" onclick="selectWalkinCategory('general')">
+              <div class="category-chip-title">👤 General Patient</div>
+              <div class="category-chip-sub">Standard FIFO (Base Tier 0)</div>
+            </div>
+            <div class="category-chip" data-cat="senior" onclick="selectWalkinCategory('senior')">
+              <div class="category-chip-title">🧓 Senior Citizen</div>
+              <div class="category-chip-sub">Priority Care (Base Tier 2)</div>
+            </div>
+          </div>
+
+          <div style="background: #F8FAFC; border: 1px solid var(--border-light); border-radius: 12px; padding: 14px; margin-bottom: 24px; font-size: 13px; color: var(--text-gray); line-height: 1.4;">
+            🔒 <strong>Clinic Policy:</strong> Self-selection is limited to General or Senior Citizen. Doctor-referred VIP status (Tier 3) is strictly granted by clinic staff.
+          </div>
+
+          <button class="btn-primary" id="walkinSubmitBtn" onclick="submitWalkin()">
+            <span>Confirm &amp; Join Live Queue</span>
+            <span>⚡</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 5: BOOK APPOINTMENT FLOW            -->
+    <!-- ========================================== -->
+    <div class="screen-view" id="screen-booking">
+      <div class="form-view-container">
+        <div class="app-topbar">
+          <div class="circle-back-btn" onclick="showScreen('screen-service-detail')" title="Back">‹</div>
+          <h2 class="heading-m">Book Scheduled Slot</h2>
+          <div style="width: 40px;"></div>
+        </div>
+
+        <div class="form-card">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <span class="form-label" style="margin-bottom: 0;">Specialty</span>
+            <span class="live-pill" id="bookingServiceName" style="background: var(--primary-green-light); color: var(--primary-green);">General OPD</span>
+          </div>
+
+          <label class="form-label" for="bookingPatientName">Patient Full Name</label>
+          <input type="text" class="form-input" id="bookingPatientName" placeholder="Enter patient name (e.g. Kashyap Patel)" />
+
+          <!-- Calendar Component -->
+          <label class="form-label">Select Date</label>
+          <div class="calendar-picker-card">
+            <div class="month-selector-bar">
+              <div class="month-title" id="calendarMonthTitle">September 2026</div>
+              <span class="caption">Upcoming 7 Days</span>
+            </div>
+            <div class="days-chips-scroll" id="calendarDaysScroll">
+              <!-- Dynamically populated by customer.js -->
+            </div>
+          </div>
+
+          <!-- Time Slots -->
+          <label class="form-label">Available Time Slots</label>
+          <div class="slots-grid">
+            <div class="time-slot-btn" data-slot="09:00 - 09:30" onclick="selectTimeSlot('09:00 - 09:30')">09:00 - 09:30 AM</div>
+            <div class="time-slot-btn selected" data-slot="10:00 - 10:30" onclick="selectTimeSlot('10:00 - 10:30')">10:00 - 10:30 AM</div>
+            <div class="time-slot-btn" data-slot="11:15 - 11:45" onclick="selectTimeSlot('11:15 - 11:45')">11:15 - 11:45 AM</div>
+            <div class="time-slot-btn" data-slot="14:00 - 14:30" onclick="selectTimeSlot('14:00 - 14:30')">02:00 - 02:30 PM</div>
+            <div class="time-slot-btn" data-slot="15:30 - 16:00" onclick="selectTimeSlot('15:30 - 16:00')">03:30 - 04:00 PM</div>
+            <div class="time-slot-btn" data-slot="17:00 - 17:30" onclick="selectTimeSlot('17:00 - 17:30')">05:00 - 05:30 PM</div>
+          </div>
+
+          <label class="form-label">Priority Category</label>
+          <div class="category-chips-row" id="bookingCategoryChips">
+            <div class="category-chip selected" data-cat="general" onclick="selectBookingCategory('general')">
+              <div class="category-chip-title">👤 General Appointment</div>
+              <div class="category-chip-sub">Tier 1 upon check-in</div>
+            </div>
+            <div class="category-chip" data-cat="senior" onclick="selectBookingCategory('senior')">
+              <div class="category-chip-title">🧓 Senior Citizen</div>
+              <div class="category-chip-sub">Tier 2 upon check-in</div>
+            </div>
+          </div>
+
+          <button class="btn-primary" id="bookingSubmitBtn" onclick="submitBooking()">
+            <span>Confirm &amp; Reserve Appointment</span>
+            <span>✓</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 5B: BOOKING CONFIRMED VOUCHER       -->
+    <!-- ========================================== -->
+    <div class="screen-view" id="screen-booking-confirmed">
+      <div class="form-view-container">
+        <div class="confirmed-screen-card">
+          <div class="confirm-check-circle">✓</div>
+          <h1 class="heading-xl" style="margin-bottom: 8px;">Appointment Reserved!</h1>
+          <p class="caption" style="margin-bottom: 24px;">Your slot has been saved in the clinic system. Please check in when you arrive at the clinic to activate your queue position.</p>
+
+          <div class="appt-id-highlight-box">
+            <span class="caption" style="text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Your Appointment ID</span>
+            <div class="appt-id-text" id="confirmedApptId">APPT-XXXXXX</div>
+            <button class="copy-id-btn" onclick="copyToClipboard(document.getElementById('confirmedApptId').textContent, 'Appointment ID copied!')">
+              <span>📋</span>
+              <span>Copy Appointment ID</span>
+            </button>
+          </div>
+
+          <div class="booking-detail-summary-card">
+            <div class="summary-row">
+              <span style="color: var(--text-gray);">Patient Name</span>
+              <strong id="confirmedPatient">—</strong>
+            </div>
+            <div class="summary-row">
+              <span style="color: var(--text-gray);">Clinic Specialty</span>
+              <strong id="confirmedService">—</strong>
+            </div>
+            <div class="summary-row">
+              <span style="color: var(--text-gray);">Date &amp; Time</span>
+              <strong id="confirmedTime">—</strong>
+            </div>
+            <div class="summary-row">
+              <span style="color: var(--text-gray);">Priority Category</span>
+              <strong id="confirmedCategory">—</strong>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <button class="btn-primary" style="flex: 1;" onclick="prefillCheckinId(document.getElementById('confirmedApptId').textContent)">
+              <span>Check In Now (If Already at Clinic)</span>
+              <span>→</span>
+            </button>
+            <button class="btn-secondary" style="flex: 1;" onclick="showScreen('screen-home')">
+              Return to Home
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 6: CHECK-IN SCREEN                  -->
+    <!-- ========================================== -->
+    <div class="screen-view" id="screen-checkin">
+      <div class="form-view-container">
+        <div class="app-topbar">
+          <div class="circle-back-btn" onclick="showScreen('screen-home')" title="Home">‹</div>
+          <h2 class="heading-m">Patient Arrival Check-in</h2>
+          <div style="width: 40px;"></div>
+        </div>
+
+        <div class="form-card">
+          <div style="text-align: center; padding: 12px 0 24px;">
+            <div style="font-size: 48px; margin-bottom: 12px;">🏷️</div>
+            <h1 class="heading-l" style="margin-bottom: 6px;">Arrived for Your Appointment?</h1>
+            <p class="caption">Enter your Appointment ID below to check in. Your token will enter the live priority queue and your anti-starvation clock will start.</p>
+          </div>
+
+          <label class="form-label" for="checkinApptInput">Appointment ID</label>
+          <input type="text" class="form-input" id="checkinApptInput" placeholder="Paste or type Appointment ID" />
+
+          <button class="btn-primary" id="checkinSubmitBtn" onclick="submitCheckin()" style="margin-bottom: 16px;">
+            <span>Check In &amp; Enter Live Queue</span>
+            <span>⚡</span>
+          </button>
+
+          <div style="text-align: center;">
+            <span class="caption">Don't have an appointment?</span>
+            <a href="javascript:void(0)" onclick="showScreen('screen-browse')" style="font-size: 13px; font-weight: 700; color: var(--primary-green); margin-left: 6px; text-decoration: none;">Join Walk-in Queue →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 7: LIVE STATUS & ANTI-STARVATION    -->
+    <!-- ========================================== -->
+    <div class="screen-view" id="screen-live-status">
+      <div class="form-view-container">
+        <div class="app-topbar">
+          <div class="circle-back-btn" onclick="showScreen('screen-home')" title="Home">‹</div>
+          <h2 class="heading-m">Live Queue Status &amp; Anti-Starvation</h2>
+          <div style="width: 40px;"></div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="liveTrackingEmpty" style="display: none; text-align: center; padding: 64px 20px;">
+          <div style="font-size: 64px; margin-bottom: 16px;">⏳</div>
+          <h2 class="heading-xl" style="margin-bottom: 8px;">No Active Queue Token</h2>
+          <p class="caption" style="margin-bottom: 28px; max-width: 420px; margin-left: auto; margin-right: auto;">
+            You are not currently waiting in any clinic queue. Join a walk-in queue or check in for a booked appointment.
+          </p>
+          <button class="btn-primary" style="max-width: 320px; margin: 0 auto;" onclick="showScreen('screen-browse')">
+            <span>Browse Specialties &amp; Join Queue</span>
+          </button>
+        </div>
+
+        <!-- Active State -->
+        <div id="liveTrackingActive">
+          <!-- Called Alert Banner -->
+          <div class="called-alert-modal" id="calledNoticeModal">
+            <div style="font-size: 36px;">📢</div>
+            <div class="called-counter-huge" id="calledCounterName">Counter 1</div>
+            <div style="font-size: 18px; font-weight: 800;">It's your turn! Please proceed to the counter.</div>
+          </div>
+
+          <div class="live-status-hero">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+              <span class="caption" style="font-weight: 700;">TOKEN: <span id="liveTokenIdDisplay" style="font-family: monospace; font-size: 14px; color: var(--text-dark);">#---</span></span>
+              <span class="live-badge-status waiting" id="liveStatusPill">Waiting in Queue</span>
+            </div>
+
+            <!-- Big Position Circle -->
+            <div class="hero-position-circle">
+              <span class="position-number-big" id="liveQueuePosition">#1</span>
+              <span class="position-label-tiny">In Queue</span>
+            </div>
+
+            <!-- ETA and Tier Box -->
+            <div class="eta-display-box">
+              <div>
+                <div class="caption">Estimated Wait Time</div>
+                <div class="eta-minutes-bold" id="liveEtaMinutes">~5 min</div>
+              </div>
+              <div style="text-align: right;">
+                <div class="caption">Effective Priority</div>
+                <span class="tier-badge tier-0" id="liveTierBadge" style="margin-top: 4px;">Tier 0 · Walk-in</span>
+              </div>
+            </div>
+
+            <!-- Anti-Starvation Aging Engine Breakdown -->
+            <div class="aging-starvation-card" id="agingStarvationCard">
+              <div class="aging-card-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span>🛡️</span>
+                  <strong style="font-size: 14px; color: var(--text-dark);">Anti-Starvation Aging Engine</strong>
+                </div>
+                <span style="font-size: 12px; font-weight: 700; color: var(--primary-green);" id="agingWaitDuration">0m 00s waited</span>
+              </div>
+
+              <div class="aging-progress-track">
+                <div class="aging-progress-fill" id="agingProgressBar" style="width: 10%;"></div>
+              </div>
+
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-size: 12px; color: var(--text-gray);" id="agingCountdownText">Next tier boost in 5m 00s (+1 Tier)</span>
+                <span style="font-size: 11px; font-weight: 700; color: #4338CA; background: #EEF2FF; padding: 2px 8px; border-radius: 4px;">Dynamic Boost</span>
+              </div>
+
+              <div class="aging-formula-info" id="agingFormulaBreakdown">
+                Base Tier 0 + 0 aging boost(s) = Effective Tier 0 (Capped at 3).
+              </div>
+            </div>
+
+            <button class="btn-secondary" style="font-size: 13px;" onclick="leaveOrClearQueue()">
+              Stop Tracking / Exit Queue
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Toast Notice Banner -->
+  <div class="toast-notice" id="customerToast">Notification message</div>
+
+  <script src="config.js"></script>
+  <script src="customer.js"></script>
+</body>
+</html>

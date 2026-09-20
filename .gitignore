@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+
+# Firebase & Sensitive Credentials
+backend/serviceAccountKey.json
+serviceAccountKey.json
+*.pem
+*.key
+.env
+.env.*
+!.env.example
+
+# Deployment artifacts & caches
+.vercel
+dist/
+build/
+*.log
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
